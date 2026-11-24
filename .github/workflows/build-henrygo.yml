@@ -54,7 +54,7 @@ jobs:
           path: src\PCL2-Language\Plain Craft Launcher 2\obj\Release\Plain Craft Launcher 2.exe
 
       - name: Publish exe to build-output branch
-        shell: pwwsh
+        shell: pwsh
         run: |
           $exe = Join-Path $env:RUNNER_TEMP 'PCL2_Lang_henrygo.exe'
           Copy-Item (Join-Path $env:GITHUB_WORKSPACE 'src\PCL2-Language\Plain Craft Launcher 2\obj\Release\Plain Craft Launcher 2.exe') $exe
