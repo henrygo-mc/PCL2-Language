@@ -1,0 +1,69 @@
+name: Build PCL2 henrygo EXE
+
+on:
+  push:
+    branches:
+      - henrygo-open-source
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          fetch-depth: 1
+
+      - name: Download source
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP 'PCL2-Language-henrygo.zip'
+          Invoke-WebRequest -Uri 'https://aka.doubaocdn.com/s/zDWrdvnskE' -OutFile $zip
+          Expand-Archive -Path $zip -DestinationPath (Join-Path $env:GITHUB_WORKSPACE 'src') -Force
+          Get-ChildItem (Join-Path $env:GITHUB_WORKSPACE 'src\PCL2-Language') | Select-Object -First 8 Name
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+        with:
+          nuget-version: latest
+
+      - name: Restore NuGet packages
+        shell: pwsh
+        working-directory: ${{ github.workspace }}\src\PCL2-Language
+        run: nuget restore "Plain Craft Launcher 2.sln"
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Build
+        shell: pwsh
+        working-directory: ${{ github.workspace }}\src\PCL2-Language
+        run: msbuild "Plain Craft Launcher 2\Plain Craft Launcher 2.vbproj" -p:Configuration=Release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PCL2_Lang_henrygo
+          path: src\PCL2-Language\Plain Craft Launcher 2\obj\Release\Plain Craft Launcher 2.exe
+
+      - name: Publish exe to build-output branch
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP 'PCL2_Lang_henrygo.exe'
+          Copy-Item (Join-Path $env:GITHUB_WORKSPACE 'src\PCL2-Language\Plain Craft Launcher 2\obj\Release\Plain Craft Launcher 2.exe') $exe
+          Set-Location (Join-Path $env:GITHUB_WORKSPACE 'repo')
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout --orphan build-output
+          git rm -rf . --quiet
+          Copy-Item $exe '.\PCL2_Lang_henrygo.exe'
+          git add 'PCL2_Lang_henrygo.exe'
+          git commit -m "Build PCL2 henrygo exe"
+          git push origin build-output --force
