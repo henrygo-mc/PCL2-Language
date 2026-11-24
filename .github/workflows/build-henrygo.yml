@@ -43,7 +43,7 @@ jobs:
           msbuild-architecture: x64
 
       - name: Build
-        shell: pwwsh
+        shell: pwsh
         working-directory: ${{ github.workspace }}\src\PCL2-Language
         run: msbuild "Plain Craft Launcher 2\Plain Craft Launcher 2.vbproj" -p:Configuration=Release
 
